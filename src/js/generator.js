@@ -5,51 +5,49 @@ const PuzzleGenerator = (() => {
     const BOARD_SIZE = 9;
     const BOX_SIZE = 3;
 
+    // Difficulty settings: number of cells to remove for each difficulty
+    const DIFFICULTY_SETTINGS = {
+        easy: { min: 37, max: 45 },      // 44-52 clues remaining
+        medium: { min: 46, max: 53 },    // 28-35 clues remaining
+        hard: { min: 55, max: 64 }       // 17-26 clues remaining
+    };
+
     /**
      * Generate a complete, solved Sudoku board
      */
     function generateSolvedBoard() {
         const board = Array(9).fill().map(() => Array(9).fill(0));
-
-        if (fillBoard(board, 0, 0)) {
-            return board;
-        }
-        return null;
+        fillBoard(board);
+        return board;
     }
 
     /**
-     * Fill board with backtracking algorithm
+     * Find the next empty cell and fill board using backtracking
      */
-    function fillBoard(board, row, col) {
+    function fillBoard(board) {
         // Find next empty cell
-        if (row === BOARD_SIZE) {
-            return true; // Board is complete
-        }
+        for (let row = 0; row < BOARD_SIZE; row++) {
+            for (let col = 0; col < BOARD_SIZE; col++) {
+                if (board[row][col] === 0) {
+                    // Try numbers 1-9 in random order
+                    const numbers = shuffleArray([1, 2, 3, 4, 5, 6, 7, 8, 9]);
 
-        const nextRow = col === 8 ? row + 1 : row;
-        const nextCol = col === 8 ? 0 : col + 1;
+                    for (let num of numbers) {
+                        if (isValid(board, row, col, num)) {
+                            board[row][col] = num;
 
-        // If cell is already filled, move to next
-        if (board[row][col] !== 0) {
-            return fillBoard(board, nextRow, nextCol);
-        }
+                            if (fillBoard(board)) {
+                                return true;
+                            }
 
-        // Try numbers 1-9 in random order
-        const numbers = shuffleArray([1, 2, 3, 4, 5, 6, 7, 8, 9]);
-
-        for (let num of numbers) {
-            if (isValid(board, row, col, num)) {
-                board[row][col] = num;
-
-                if (fillBoard(board, nextRow, nextCol)) {
-                    return true;
+                            board[row][col] = 0; // Backtrack
+                        }
+                    }
+                    return false;
                 }
-
-                board[row][col] = 0; // Backtrack
             }
         }
-
-        return false;
+        return true; // Board is complete
     }
 
     /**
@@ -90,21 +88,9 @@ const PuzzleGenerator = (() => {
         // Create a copy to work with
         const puzzle = solved.map(row => [...row]);
 
-        // Determine how many clues to remove based on difficulty
-        let cellsToRemove;
-        switch (difficulty) {
-            case 'easy':
-                cellsToRemove = getRandomInt(37, 45); // 37-45 cells removed (44-52 clues)
-                break;
-            case 'medium':
-                cellsToRemove = getRandomInt(46, 53); // 46-53 cells removed (28-35 clues)
-                break;
-            case 'hard':
-                cellsToRemove = getRandomInt(55, 64); // 55-64 cells removed (17-26 clues)
-                break;
-            default:
-                cellsToRemove = 50;
-        }
+        // Get difficulty settings
+        const settings = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS.medium;
+        const cellsToRemove = getRandomInt(settings.min, settings.max);
 
         // Randomly remove cells
         const removed = new Set();
