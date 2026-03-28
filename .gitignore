@@ -1,0 +1,9 @@
+_bmad/
+node_modules/
+.DS_Store
+.vscode/
+*.swp
+*.swo
+*~
+.env
+.env.local

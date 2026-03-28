@@ -1,0 +1,493 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+/* ===== Modal Styles ===== */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    max-width: 500px;
+    width: 100%;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-content h2 {
+    margin-bottom: 20px;
+    font-size: 1.8rem;
+}
+
+.modal-content p {
+    margin-bottom: 20px;
+    font-size: 1rem;
+    color: #666;
+}
+
+/* Difficulty Buttons */
+.difficulty-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.difficulty-btn {
+    padding: 15px 30px;
+    font-size: 1.1rem;
+    border: 2px solid #ddd;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 600;
+}
+
+.difficulty-btn:hover {
+    border-color: #007bff;
+    background: #f0f8ff;
+    transform: scale(1.05);
+}
+
+.difficulty-btn:active {
+    transform: scale(0.98);
+}
+
+/* Modal Buttons */
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-primary,
+.btn-secondary {
+    padding: 12px 24px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 600;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
+    transform: translateY(-2px);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-secondary {
+    background: #e9ecef;
+    color: #333;
+}
+
+.btn-secondary:hover {
+    background: #dee2e6;
+}
+
+/* Completion Modal */
+.completion-content {
+    text-align: center;
+}
+
+.completion-content h2 {
+    font-size: 2rem;
+    margin-bottom: 15px;
+    color: #28a745;
+}
+
+.completion-content p {
+    font-size: 1.2rem;
+    margin-bottom: 30px;
+}
+
+.completion-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* ===== Game View ===== */
+.game-view {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 600px;
+}
+
+.game-view.hidden {
+    display: none;
+}
+
+/* Status Bar */
+.status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    gap: 15px;
+}
+
+.difficulty-display {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #555;
+}
+
+.timer {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #007bff;
+    font-family: 'Courier New', monospace;
+}
+
+.controls {
+    display: flex;
+    gap: 8px;
+}
+
+.control-btn {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 600;
+}
+
+.control-btn:hover {
+    background: #f0f0f0;
+    border-color: #999;
+}
+
+.control-btn:active {
+    transform: scale(0.98);
+}
+
+.control-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ===== Game Container ===== */
+.game-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+    width: 100%;
+}
+
+/* ===== Sudoku Grid ===== */
+.sudoku-grid {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    grid-template-rows: repeat(9, 1fr);
+    gap: 2px;
+    background: #333;
+    padding: 2px;
+    border: 3px solid #333;
+    width: 100%;
+    max-width: 500px;
+    aspect-ratio: 1 / 1;
+    margin: 0 auto;
+}
+
+.sudoku-cell {
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    font-weight: bold;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.1s;
+    position: relative;
+}
+
+.sudoku-cell:hover {
+    background-color: #f0f0f0;
+}
+
+.sudoku-cell.selected {
+    background-color: #cce5ff;
+    box-shadow: inset 0 0 0 2px #007bff;
+}
+
+.sudoku-cell.locked {
+    background-color: #f9f9f9;
+    color: #333;
+    font-weight: 700;
+}
+
+.sudoku-cell.conflict {
+    background-color: #ffe0e0;
+    color: #d9534f;
+}
+
+.sudoku-cell.conflict.selected {
+    background-color: #ffb3b3;
+    box-shadow: inset 0 0 0 2px #d9534f;
+}
+
+/* 3x3 Box Borders */
+/* Right borders: after columns 3 and 6 (not after column 9) */
+.sudoku-cell:nth-child(3n):not(:nth-child(9n)) {
+    border-right: 3px solid #333;
+}
+
+/* Bottom borders: after rows 3 and 6 */
+/* Row 3 = cells 19-27, Row 6 = cells 46-54 */
+.sudoku-cell:nth-child(n + 19):nth-child(-n + 27),
+.sudoku-cell:nth-child(n + 46):nth-child(-n + 54) {
+    border-bottom: 3px solid #333;
+}
+
+/* ===== Number Pad ===== */
+.number-pad {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    max-width: 500px;
+}
+
+.number-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+}
+
+.number-btn {
+    padding: 12px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border: 2px solid #ddd;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.1s;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+}
+
+.number-btn:hover {
+    border-color: #007bff;
+    background: #f0f8ff;
+}
+
+.number-btn:active {
+    transform: scale(0.95);
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.undo-btn-pad {
+    font-size: 1.3rem;
+}
+
+/* ===== Responsive Design ===== */
+
+/* Tablet: 600px - 1024px */
+@media (max-width: 768px) {
+    .status-bar {
+        flex-wrap: nowrap;
+        gap: 10px;
+    }
+
+    .controls {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .sudoku-grid {
+        max-width: 400px;
+    }
+
+    .sudoku-cell {
+        font-size: 1.1rem;
+    }
+
+    .number-btn {
+        min-height: 40px;
+        padding: 8px;
+        font-size: 0.95rem;
+    }
+}
+
+/* Mobile: < 600px */
+@media (max-width: 600px) {
+    .container {
+        padding: 10px;
+    }
+
+    .modal-content {
+        padding: 30px 20px;
+    }
+
+    .difficulty-btn {
+        padding: 12px 24px;
+        font-size: 1rem;
+    }
+
+    .status-bar {
+        padding: 10px;
+        gap: 8px;
+        font-size: 0.85rem;
+        flex-wrap: nowrap;
+    }
+
+    .difficulty-display {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #555;
+        white-space: nowrap;
+    }
+
+    .timer {
+        font-size: 0.9rem;
+        font-weight: bold;
+        color: #007bff;
+        font-family: 'Courier New', monospace;
+    }
+
+    .controls {
+        display: flex;
+        gap: 6px;
+    }
+
+    .control-btn {
+        padding: 4px 8px;
+        font-size: 0.7rem;
+        white-space: nowrap;
+    }
+
+    .sudoku-grid {
+        max-width: 100%;
+        gap: 1px;
+        padding: 1px;
+        border-width: 2px;
+    }
+
+    .sudoku-cell {
+        font-size: 0.9rem;
+    }
+
+    .sudoku-grid > .sudoku-cell:nth-child(3n):not(:nth-child(9n)) {
+        border-right: 2px solid #333;
+    }
+
+    .sudoku-grid > .sudoku-cell:nth-child(n + 19):nth-child(-n + 27),
+    .sudoku-grid > .sudoku-cell:nth-child(n + 46):nth-child(-n + 54) {
+        border-bottom: 2px solid #333;
+    }
+
+    .number-row {
+        gap: 6px;
+    }
+
+    .number-btn {
+        min-height: 38px;
+        padding: 6px;
+        font-size: 0.9rem;
+    }
+
+    .undo-btn-pad {
+        font-size: 1.1rem;
+    }
+}
+
+/* Landscape orientation adjustments */
+@media (max-width: 600px) and (orientation: landscape) {
+    .container {
+        min-height: auto;
+        padding: 5px;
+    }
+
+    .sudoku-grid {
+        max-width: 80vh;
+    }
+
+    .number-pad {
+        max-width: 80vh;
+    }
+}

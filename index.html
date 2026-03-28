@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudoku - Pure JavaScript</title>
+    <link rel="stylesheet" href="src/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Puzzle Picker Modal -->
+        <div id="puzzlePickerModal" class="modal active">
+            <div class="modal-content">
+                <h2>Select Difficulty</h2>
+                <div class="difficulty-buttons">
+                    <button class="difficulty-btn" data-difficulty="easy">Easy</button>
+                    <button class="difficulty-btn" data-difficulty="medium">Medium</button>
+                    <button class="difficulty-btn" data-difficulty="hard">Hard</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game View -->
+        <div id="gameView" class="game-view hidden">
+            <!-- Game Status Bar -->
+            <div class="status-bar">
+                <div class="difficulty-display">
+                    Difficulty: <span id="difficultyDisplay"></span>
+                </div>
+                <div class="timer">
+                    <span id="timerDisplay">00:00</span>
+                </div>
+                <div class="controls">
+                    <button id="undoBtn" class="control-btn">Undo</button>
+                    <button id="newGameBtn" class="control-btn">New Game</button>
+                </div>
+            </div>
+
+            <!-- Game Board -->
+            <div class="game-container">
+                <div id="gameBoard" class="sudoku-grid"></div>
+
+                <!-- Number Pad -->
+                <div class="number-pad">
+                    <div class="number-row">
+                        <button class="number-btn" data-number="1">1</button>
+                        <button class="number-btn" data-number="2">2</button>
+                        <button class="number-btn" data-number="3">3</button>
+                        <button class="number-btn" data-number="4">4</button>
+                        <button class="number-btn undo-btn-pad" data-number="undo">⌫</button>
+                    </div>
+                    <div class="number-row">
+                        <button class="number-btn" data-number="5">5</button>
+                        <button class="number-btn" data-number="6">6</button>
+                        <button class="number-btn" data-number="7">7</button>
+                        <button class="number-btn" data-number="8">8</button>
+                        <button class="number-btn" data-number="9">9</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Completion Modal -->
+            <div id="completionModal" class="modal hidden">
+                <div class="modal-content completion-content">
+                    <h2>🎉 Puzzle Solved! 🎉</h2>
+                    <p>Time: <span id="completionTime"></span></p>
+                    <div class="completion-buttons">
+                        <button id="playAgainBtn" class="btn-primary">Play Again</button>
+                        <button id="newPuzzleBtn" class="btn-primary">New Puzzle</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="src/js/generator.js"></script>
+    <script src="src/js/game.js"></script>
+    <script src="src/js/ui.js"></script>
+</body>
+</html>
