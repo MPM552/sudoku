@@ -12,8 +12,8 @@ A performance-first, distraction-free Sudoku web application built with vanilla 
 - ⌨️ **Keyboard & Touch** — Full keyboard support (1-9, Backspace)
 
 ## Quick Start
-
-1. **Open the game**
+1. **Download Zip**
+2. **Open the game**
    ```bash
    # Option 1: Direct (no server needed)
    open index.html
@@ -22,9 +22,9 @@ A performance-first, distraction-free Sudoku web application built with vanilla 
    Right-click index.html → Open with Live Server
    ```
 
-2. **Select difficulty** (Easy, Medium, Hard)
-3. **Play** — Click cells to select, use number buttons or keyboard (1-9)
-4. **Controls**
+3. **Select difficulty** (Easy, Medium, Hard)
+4. **Play** — Click cells to select, use number buttons or keyboard (1-9)
+5. **Controls**
    - **Undo** — Revert last move
    - **New Game** — Return to difficulty picker
    - **Backspace/Delete** — Clear cell
