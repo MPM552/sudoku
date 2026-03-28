@@ -2,9 +2,9 @@ _bmad/
 node_modules/
 .DS_Store
 .vscode/
+docs/
 *.swp
 *.swo
 *~
 .env
 .env.local
-docs/
