@@ -1,6 +1,6 @@
 # Sudoku - Pure JavaScript Game
 
-A performance-first, distraction-free Sudoku web application built with vanilla JavaScript.
+A performance-first, distraction-free Sudoku web application built with vanilla JavaScript using Claude Haiku 4.5.
 
 ## Features
 
