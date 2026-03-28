@@ -91,12 +91,7 @@ const Game = (() => {
         // Save current state to history BEFORE making change
         saveToHistory();
 
-        const oldValue = board[row][col];
         board[row][col] = num;
-
-        // Check for duplicates/conflicts
-        const hasConflict = hasConflicts(row, col);
-
         return true;
     }
 
@@ -151,21 +146,38 @@ const Game = (() => {
 
     /**
      * Check if the entire board is solved correctly
+     * Uses Set-based validation for O(n) performance
      */
     function isSolved() {
-        // All cells must be filled
+        // Check all rows have 1-9
         for (let r = 0; r < BOARD_SIZE; r++) {
-            for (let c = 0; c < BOARD_SIZE; c++) {
-                if (board[r][c] === 0) {
-                    return false;
-                }
+            const rowSet = new Set(board[r]);
+            if (rowSet.size !== BOARD_SIZE || rowSet.has(0)) {
+                return false;
             }
         }
 
-        // Check for any conflicts
-        for (let r = 0; r < BOARD_SIZE; r++) {
-            for (let c = 0; c < BOARD_SIZE; c++) {
-                if (hasConflicts(r, c)) {
+        // Check all columns have 1-9
+        for (let c = 0; c < BOARD_SIZE; c++) {
+            const colSet = new Set();
+            for (let r = 0; r < BOARD_SIZE; r++) {
+                colSet.add(board[r][c]);
+            }
+            if (colSet.size !== BOARD_SIZE || colSet.has(0)) {
+                return false;
+            }
+        }
+
+        // Check all 3x3 boxes have 1-9
+        for (let boxRow = 0; boxRow < BOARD_SIZE; boxRow += BOX_SIZE) {
+            for (let boxCol = 0; boxCol < BOARD_SIZE; boxCol += BOX_SIZE) {
+                const boxSet = new Set();
+                for (let r = boxRow; r < boxRow + BOX_SIZE; r++) {
+                    for (let c = boxCol; c < boxCol + BOX_SIZE; c++) {
+                        boxSet.add(board[r][c]);
+                    }
+                }
+                if (boxSet.size !== BOARD_SIZE || boxSet.has(0)) {
                     return false;
                 }
             }
