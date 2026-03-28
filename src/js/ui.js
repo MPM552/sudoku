@@ -9,8 +9,13 @@ const UI = (() => {
         timerDisplay: null,
         undoBtn: null,
         newGameBtn: null,
+        settingsBtn: null,
         numberPad: null,
-        completionModal: null
+        completionModal: null,
+        settingsModal: null,
+        bgColorPicker: null,
+        closeSettingsBtn: null,
+        resetSettingsBtn: null
     };
 
     let selectedCell = null; // Track selected cell [row, col]
@@ -23,6 +28,7 @@ const UI = (() => {
         Game.initializePuzzleCache(); // Generate puzzle cache on startup
         cacheElements();
         attachEventListeners();
+        loadBackgroundColor(); // Load saved background color
     }
 
     /**
@@ -37,11 +43,16 @@ const UI = (() => {
             timerDisplay: document.getElementById('timerDisplay'),
             undoBtn: document.getElementById('undoBtn'),
             newGameBtn: document.getElementById('newGameBtn'),
+            settingsBtn: document.getElementById('settingsBtn'),
             numberPad: document.querySelector('.number-pad'),
             completionModal: document.getElementById('completionModal'),
             playAgainBtn: document.getElementById('playAgainBtn'),
             newPuzzleBtn: document.getElementById('newPuzzleBtn'),
-            completionTime: document.getElementById('completionTime')
+            completionTime: document.getElementById('completionTime'),
+            settingsModal: document.getElementById('settingsModal'),
+            bgColorPicker: document.getElementById('bgColorPicker'),
+            closeSettingsBtn: document.getElementById('closeSettingsBtn'),
+            resetSettingsBtn: document.getElementById('resetSettingsBtn')
         };
     }
 
@@ -72,8 +83,26 @@ const UI = (() => {
         // Control buttons
         elements.undoBtn.addEventListener('click', handleUndo);
         elements.newGameBtn.addEventListener('click', showPuzzlePicker);
+        elements.settingsBtn.addEventListener('click', showSettings);
 
-        // Completion modal
+        // Settings modal
+        elements.closeSettingsBtn.addEventListener('click', hideSettings);
+        elements.resetSettingsBtn.addEventListener('click', resetBackgroundColor);
+        elements.bgColorPicker.addEventListener('change', (e) => {
+            const color = e.target.value;
+            setBackgroundColor(color);
+            localStorage.setItem('sudokuBgColor', color);
+        });
+
+        // Preset color buttons
+        document.querySelectorAll('.preset-color').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const color = e.target.dataset.color;
+                elements.bgColorPicker.value = color;
+                setBackgroundColor(color);
+                localStorage.setItem('sudokuBgColor', color);
+            });
+        });
         elements.playAgainBtn.addEventListener('click', () => {
             hideSwitchableModals();
             renderBoard();
@@ -316,6 +345,56 @@ const UI = (() => {
         elements.completionTime.textContent = Game.getTimeString();
         elements.completionModal.classList.remove('hidden');
         elements.completionModal.classList.add('active'); // Make modal visible
+    }
+
+    /**
+     * Show settings modal
+     */
+    function showSettings() {
+        elements.settingsModal.classList.remove('hidden');
+        elements.settingsModal.classList.add('active');
+        
+        // Load current color in picker
+        const savedColor = localStorage.getItem('sudokuBgColor');
+        if (savedColor) {
+            elements.bgColorPicker.value = savedColor;
+        }
+    }
+
+    /**
+     * Hide settings modal
+     */
+    function hideSettings() {
+        elements.settingsModal.classList.add('hidden');
+        elements.settingsModal.classList.remove('active');
+    }
+
+    /**
+     * Set the background color of the page
+     */
+    function setBackgroundColor(color) {
+        document.body.style.backgroundColor = color;
+    }
+
+    /**
+     * Reset background color to default
+     */
+    function resetBackgroundColor() {
+        const defaultColor = '#f5f5f5';
+        elements.bgColorPicker.value = defaultColor;
+        setBackgroundColor(defaultColor);
+        localStorage.removeItem('sudokuBgColor');
+    }
+
+    /**
+     * Load saved background color from localStorage
+     */
+    function loadBackgroundColor() {
+        const savedColor = localStorage.getItem('sudokuBgColor');
+        if (savedColor) {
+            setBackgroundColor(savedColor);
+            elements.bgColorPicker.value = savedColor;
+        }
     }
 
     /**
