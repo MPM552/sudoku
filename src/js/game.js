@@ -3,7 +3,9 @@ const Game = (() => {
     // Private state
     let board = null;        // Current board state (user entries)
     let original = null;     // Original puzzle state (locked cells)
+    let notes = null;        // Notes for each cell (array of numbers 1-9)
     let history = [];        // Undo history
+    let notesHistory = [];   // Notes history for undo
     let difficulty = null;
     let isComplete = false;
     let timerInterval = null;
@@ -70,8 +72,14 @@ const Game = (() => {
         // Initialize board with locked cells filled in
         board = puzzle.map(row => [...row]);
         
+        // Initialize notes grid
+        notes = Array.from({ length: 9 }, () =>
+            Array.from({ length: 9 }, () => [])
+        );
+        
         // Clear history
         history = [];
+        notesHistory = [];
         isComplete = false;
         elapsedSeconds = 0;
         
@@ -92,7 +100,60 @@ const Game = (() => {
         saveToHistory();
 
         board[row][col] = num;
+        // Clear notes when a value is entered
+        notes[row][col] = [];
         return true;
+    }
+
+    /**
+     * Add a note to a cell
+     */
+    function addNote(row, col, num) {
+        if (original[row][col] !== 0 || board[row][col] !== 0) {
+            return false; // Can't add notes to locked or filled cells
+        }
+
+        saveToHistory();
+
+        if (!notes[row][col].includes(num)) {
+            notes[row][col].push(num);
+            notes[row][col].sort((a, b) => a - b);
+        }
+        return true;
+    }
+
+    /**
+     * Remove a note from a cell
+     */
+    function removeNote(row, col, num) {
+        if (!notes[row][col].includes(num)) {
+            return false;
+        }
+
+        saveToHistory();
+
+        notes[row][col] = notes[row][col].filter(n => n !== num);
+        return true;
+    }
+
+    /**
+     * Clear all notes from a cell
+     */
+    function clearNotes(row, col) {
+        if (notes[row][col].length === 0) {
+            return false;
+        }
+
+        saveToHistory();
+        notes[row][col] = [];
+        return true;
+    }
+
+    /**
+     * Get notes for a cell
+     */
+    function getNotes(row, col) {
+        return [...notes[row][col]];
     }
 
     /**
@@ -213,7 +274,11 @@ const Game = (() => {
      */
     function reset() {
         board = original.map(row => [...row]);
+        notes = Array.from({ length: 9 }, () =>
+            Array.from({ length: 9 }, () => [])
+        );
         history = [];
+        notesHistory = [];
         isComplete = false;
         elapsedSeconds = 0;
         if (timerInterval) clearInterval(timerInterval);
@@ -270,7 +335,8 @@ const Game = (() => {
         return {
             value: board[row][col],
             isLocked: original[row][col] !== 0,
-            hasConflict: hasConflicts(row, col)
+            hasConflict: hasConflicts(row, col),
+            notes: getNotes(row, col)
         };
     }
 
@@ -289,6 +355,10 @@ const Game = (() => {
         init,
         setCell,
         clearCell,
+        addNote,
+        removeNote,
+        clearNotes,
+        getNotes,
         hasConflicts,
         isSolved,
         markComplete,
