@@ -40,8 +40,6 @@ Sudoku-js/
 │   │   └── generator.js     # Sudoku puzzle generator
 │   └── css/
 │       └── style.css        # Responsive styling
-├── docs/
-│   └── prd.md               # Product requirements document
 ├── index.html               # Main entry point
 └── README.md                # This file
 ```
