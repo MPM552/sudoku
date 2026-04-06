@@ -112,8 +112,8 @@ const UI = (() => {
         });
         elements.playAgainBtn.addEventListener('click', () => {
             hideSwitchableModals();
-            renderBoard();
             Game.reset();
+            renderBoard();
             updateUI();
         });
 

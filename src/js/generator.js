@@ -77,34 +77,86 @@ const PuzzleGenerator = (() => {
     }
 
     /**
+     * Count the number of solutions for a puzzle
+     * Stops after finding 2 solutions for efficiency
+     */
+    function countSolutions(puzzle) {
+        const board = puzzle.map(row => [...row]);
+        let solutionCount = 0;
+
+        function solve() {
+            // Early exit if we've found multiple solutions
+            if (solutionCount > 1) return;
+
+            // Find next empty cell
+            for (let row = 0; row < BOARD_SIZE; row++) {
+                for (let col = 0; col < BOARD_SIZE; col++) {
+                    if (board[row][col] === 0) {
+                        // Try numbers 1-9
+                        for (let num = 1; num <= 9; num++) {
+                            if (isValid(board, row, col, num)) {
+                                board[row][col] = num;
+                                solve();
+                                board[row][col] = 0;
+                            }
+                        }
+                        return;
+                    }
+                }
+            }
+            // No empty cells found - we have a solution
+            solutionCount++;
+        }
+
+        solve();
+        return solutionCount;
+    }
+
+    /**
+     * Check if a puzzle has a unique solution
+     */
+    function hasUniqueSolution(puzzle) {
+        return countSolutions(puzzle) === 1;
+    }
+
+    /**
      * Generate a puzzle with specified difficulty
      * Difficulty: 'easy', 'medium', 'hard'
      */
     function generatePuzzle(difficulty = 'medium') {
-        // Generate solved board
-        const solved = generateSolvedBoard();
-        if (!solved) return null;
+        let puzzle;
+        let attempts = 0;
+        const maxAttempts = 10; // Prevent infinite loops
 
-        // Create a copy to work with
-        const puzzle = solved.map(row => [...row]);
+        do {
+            // Generate solved board
+            const solved = generateSolvedBoard();
+            if (!solved) continue;
 
-        // Get difficulty settings
-        const settings = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS.medium;
-        const cellsToRemove = getRandomInt(settings.min, settings.max);
+            // Create a copy to work with
+            puzzle = solved.map(row => [...row]);
 
-        // Randomly remove cells
-        const removed = new Set();
-        while (removed.size < cellsToRemove) {
-            const row = getRandomInt(0, 8);
-            const col = getRandomInt(0, 8);
-            const key = `${row},${col}`;
+            // Get difficulty settings
+            const settings = DIFFICULTY_SETTINGS[difficulty] || DIFFICULTY_SETTINGS.medium;
+            const cellsToRemove = getRandomInt(settings.min, settings.max);
 
-            if (!removed.has(key)) {
-                puzzle[row][col] = 0;
-                removed.add(key);
+            // Randomly remove cells
+            const removed = new Set();
+            while (removed.size < cellsToRemove) {
+                const row = getRandomInt(0, 8);
+                const col = getRandomInt(0, 8);
+                const key = `${row},${col}`;
+
+                if (!removed.has(key)) {
+                    puzzle[row][col] = 0;
+                    removed.add(key);
+                }
             }
-        }
 
+            attempts++;
+        } while (!hasUniqueSolution(puzzle) && attempts < maxAttempts);
+
+        // Return puzzle if unique solution found, or the last attempt
         return puzzle;
     }
 
