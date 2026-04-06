@@ -306,6 +306,7 @@ body {
 .control-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    background: #e9ecef;
 }
 
 /* ===== Game Container ===== */
@@ -368,6 +369,36 @@ body {
 .sudoku-cell.conflict.selected {
     background-color: #ffb3b3;
     box-shadow: inset 0 0 0 2px #d9534f;
+}
+
+.sudoku-cell.matching {
+    background-color: #ffffcc;
+}
+
+.sudoku-cell.matching.selected {
+    background-color: #ffff99;
+    box-shadow: inset 0 0 0 2px #007bff;
+}
+
+/* Notes display in cells */
+.cell-notes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    width: 100%;
+    height: 100%;
+    padding: 2px;
+    align-content: center;
+    justify-content: center;
+}
+
+.note {
+    font-size: 0.6rem;
+    font-weight: normal;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
 }
 
 /* 3x3 Box Borders */

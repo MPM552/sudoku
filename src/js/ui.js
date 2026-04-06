@@ -15,11 +15,14 @@ const UI = (() => {
         settingsModal: null,
         bgColorPicker: null,
         closeSettingsBtn: null,
-        resetSettingsBtn: null
+        resetSettingsBtn: null,
+        notesToggleBtn: null,
+        clearNotesBtn: null
     };
 
     let selectedCell = null; // Track selected cell [row, col]
     let timerInterval = null;
+    let notesMode = false; // Track if in notes entry mode
 
     /**
      * Initialize all DOM elements and event listeners
@@ -52,7 +55,9 @@ const UI = (() => {
             settingsModal: document.getElementById('settingsModal'),
             bgColorPicker: document.getElementById('bgColorPicker'),
             closeSettingsBtn: document.getElementById('closeSettingsBtn'),
-            resetSettingsBtn: document.getElementById('resetSettingsBtn')
+            resetSettingsBtn: document.getElementById('resetSettingsBtn'),
+            notesToggleBtn: document.getElementById('notesToggleBtn'),
+            clearNotesBtn: document.getElementById('clearNotesBtn')
         };
     }
 
@@ -84,6 +89,8 @@ const UI = (() => {
         elements.undoBtn.addEventListener('click', handleUndo);
         elements.newGameBtn.addEventListener('click', showPuzzlePicker);
         elements.settingsBtn.addEventListener('click', showSettings);
+        elements.notesToggleBtn.addEventListener('click', toggleNotesMode);
+        elements.clearNotesBtn.addEventListener('click', handleClearNotes);
 
         // Settings modal
         elements.closeSettingsBtn.addEventListener('click', hideSettings);
@@ -137,11 +144,45 @@ const UI = (() => {
         // Backspace or Delete to clear
         if (e.key === 'Backspace' || e.key === 'Delete') {
             e.preventDefault();
-            Game.clearCell(selectedCell[0], selectedCell[1]);
+            if (notesMode) {
+                Game.clearNotes(selectedCell[0], selectedCell[1]);
+            } else {
+                Game.clearCell(selectedCell[0], selectedCell[1]);
+            }
             updateBoard();
             updateUI(); // Update button state after clear
+            
+            // Refresh highlights after clearing
+            clearNumberHighlights();
+            highlightMatchingNumbers(selectedCell[0], selectedCell[1]);
             return;
         }
+    }
+
+    /**
+     * Toggle notes mode on/off
+     */
+    function toggleNotesMode() {
+        notesMode = !notesMode;
+        elements.notesToggleBtn.style.opacity = notesMode ? '1' : '0.6';
+        elements.notesToggleBtn.style.fontWeight = notesMode ? 'bold' : 'normal';
+    }
+
+    /**
+     * Clear all notes from the selected cell
+     */
+    function handleClearNotes() {
+        if (!selectedCell) return;
+        
+        const [row, col] = selectedCell;
+        const cell = Game.getCell(row, col);
+        
+        // Don't allow on locked or filled cells
+        if (cell.isLocked || cell.value !== 0) return;
+        
+        Game.clearNotes(row, col);
+        updateBoard();
+        updateUI();
     }
 
     /**
@@ -149,14 +190,35 @@ const UI = (() => {
      */
     function handleNumberInput(num) {
         if (!selectedCell) return;
-
+        
         const [row, col] = selectedCell;
-        Game.setCell(row, col, num);
+        
+        // Don't allow input in locked cells
+        if (Game.getCell(row, col).isLocked) return;
+
+        if (notesMode) {
+            // Handle notes mode
+            const currentNotes = Game.getNotes(row, col);
+            if (currentNotes.includes(num)) {
+                Game.removeNote(row, col, num);
+            } else {
+                Game.addNote(row, col, num);
+            }
+        } else {
+            // Handle normal mode
+            Game.setCell(row, col, num);
+        }
+
         updateBoard();
+        
+        // Refresh number highlights with newly entered value
+        clearNumberHighlights();
+        highlightMatchingNumbers(row, col);
+
         updateUI(); // Update button states after move
 
-        // Check if solved
-        if (Game.isSolved()) {
+        // Check if solved (only in normal mode)
+        if (!notesMode && Game.isSolved()) {
             Game.markComplete();
             showCompletion();
         }
@@ -172,6 +234,12 @@ const UI = (() => {
         Game.undo();
         updateBoard();
         updateUI(); // Update button state after undo
+
+        // Refresh highlights after undo
+        if (selectedCell) {
+            clearNumberHighlights();
+            highlightMatchingNumbers(selectedCell[0], selectedCell[1]);
+        }
     }
 
     /**
@@ -211,6 +279,9 @@ const UI = (() => {
         renderBoard();
         updateUI();
         startTimerDisplay();
+        notesMode = false; // Reset notes mode for new game
+        elements.notesToggleBtn.style.opacity = '0.6';
+        elements.notesToggleBtn.style.fontWeight = 'normal';
     }
 
     /**
@@ -259,6 +330,17 @@ const UI = (() => {
 
         if (gameCell.value !== 0) {
             cell.textContent = gameCell.value;
+        } else if (gameCell.notes.length > 0) {
+            // Create a container for notes
+            const notesContainer = document.createElement('div');
+            notesContainer.className = 'cell-notes';
+            gameCell.notes.forEach(note => {
+                const noteEl = document.createElement('span');
+                noteEl.className = 'note';
+                noteEl.textContent = note;
+                notesContainer.appendChild(noteEl);
+            });
+            cell.appendChild(notesContainer);
         }
 
         cell.addEventListener('click', () => selectCell(row, col));
@@ -271,7 +353,6 @@ const UI = (() => {
      */
     function selectCell(row, col) {
         if (Game.getState().isComplete) return;
-        if (Game.getCell(row, col).isLocked) return;
 
         // Deselect previous
         if (selectedCell) {
@@ -279,6 +360,8 @@ const UI = (() => {
                 `[data-row="${selectedCell[0]}"][data-col="${selectedCell[1]}"]`
             );
             if (oldCell) oldCell.classList.remove('selected');
+            // Clear previous highlights
+            clearNumberHighlights();
         }
 
         // Select new
@@ -287,6 +370,41 @@ const UI = (() => {
             `[data-row="${row}"][data-col="${col}"]`
         );
         if (newCell) newCell.classList.add('selected');
+
+        // Highlight all cells with matching number (works for locked and unlocked cells)
+        highlightMatchingNumbers(row, col);
+        
+        // Update button states based on selected cell
+        updateUI();
+    }
+
+    /**
+     * Highlight all cells with the same number as the selected cell
+     */
+    function highlightMatchingNumbers(row, col) {
+        const selectedValue = Game.getCell(row, col).value;
+        if (selectedValue === 0) return; // Don't highlight if cell is empty
+
+        const cells = elements.gameBoard.querySelectorAll('.sudoku-cell');
+        cells.forEach(cellEl => {
+            const cellRow = parseInt(cellEl.dataset.row);
+            const cellCol = parseInt(cellEl.dataset.col);
+            const cellValue = Game.getCell(cellRow, cellCol).value;
+
+            if (cellValue === selectedValue) {
+                cellEl.classList.add('matching');
+            }
+        });
+    }
+
+    /**
+     * Clear all number highlights
+     */
+    function clearNumberHighlights() {
+        const cells = elements.gameBoard.querySelectorAll('.sudoku-cell');
+        cells.forEach(cellEl => {
+            cellEl.classList.remove('matching');
+        });
     }
 
     /**
@@ -299,8 +417,24 @@ const UI = (() => {
             const col = parseInt(cellEl.dataset.col);
             const gameCell = Game.getCell(row, col);
 
-            // Update text content
-            cellEl.textContent = gameCell.value !== 0 ? gameCell.value : '';
+            // Clear cell content
+            cellEl.textContent = '';
+            cellEl.innerHTML = '';
+
+            // Update value or notes
+            if (gameCell.value !== 0) {
+                cellEl.textContent = gameCell.value;
+            } else if (gameCell.notes.length > 0) {
+                const notesContainer = document.createElement('div');
+                notesContainer.className = 'cell-notes';
+                gameCell.notes.forEach(note => {
+                    const noteEl = document.createElement('span');
+                    noteEl.className = 'note';
+                    noteEl.textContent = note;
+                    notesContainer.appendChild(noteEl);
+                });
+                cellEl.appendChild(notesContainer);
+            }
 
             // Update conflict highlighting
             if (gameCell.value !== 0 && gameCell.hasConflict) {
@@ -318,6 +452,14 @@ const UI = (() => {
         const state = Game.getState();
         elements.difficultyDisplay.textContent = state.difficulty.charAt(0).toUpperCase() + state.difficulty.slice(1);
         elements.undoBtn.disabled = !state.canUndo || state.isComplete;
+
+        // Grey out clear notes button if no cell selected or locked/filled cell selected
+        if (!selectedCell) {
+            elements.clearNotesBtn.disabled = true;
+        } else {
+            const cell = Game.getCell(selectedCell[0], selectedCell[1]);
+            elements.clearNotesBtn.disabled = cell.isLocked || cell.value !== 0 || cell.notes.length === 0;
+        }
 
         // Update timer
         updateTimerDisplay();
