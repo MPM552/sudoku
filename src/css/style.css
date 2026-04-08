@@ -356,7 +356,7 @@ body {
 }
 
 .sudoku-cell.locked {
-    background-color: #f9f9f9;
+    background-color: #ffffffd3;
     color: #333;
     font-weight: 700;
 }
@@ -372,11 +372,11 @@ body {
 }
 
 .sudoku-cell.matching {
-    background-color: #e6ad34;
+    background-color: #e0b862;
 }
 
 .sudoku-cell.matching.selected {
-    background-color: #e6ad34;
+    background-color: #e0b862;
     box-shadow: inset 0 0 0 2px #007bff;
 }
 
