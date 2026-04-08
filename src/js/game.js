@@ -1,11 +1,8 @@
 // Game Logic Module
 const Game = (() => {
-    // Private state
-    let board = null;        // Current board state (user entries)
-    let original = null;     // Original puzzle state (locked cells)
-    let notes = null;        // Notes for each cell (array of numbers 1-9)
-    let history = [];        // Undo history
-    let notesHistory = [];   // Notes history for undo
+    // Private state - unified cell-based structure
+    let grid = null;        // 9x9 grid of cell objects with {value, notes, isLocked}
+    let history = [];       // Undo history
     let difficulty = null;
     let isComplete = false;
     let timerInterval = null;
@@ -28,6 +25,17 @@ const Game = (() => {
     const BOARD_SIZE = 9;
     const BOX_SIZE = 3;
     const PUZZLES_PER_DIFFICULTY = 50;
+
+    /**
+     * Create an empty cell object
+     */
+    function createCell(value = 0, isLocked = false) {
+        return {
+            value: value,           // 0-9 (0 means empty)
+            notes: [false, false, false, false, false, false, false, false, false], // 9 booleans for notes 1-9
+            isLocked: isLocked      // Can't be changed if locked
+        };
+    }
 
     /**
      * Initialize puzzle cache on app load
@@ -66,20 +74,23 @@ const Game = (() => {
         difficulty = diff;
         const puzzle = getPuzzle(difficulty);
         
-        // Copy puzzle to original (locked cells)
-        original = puzzle.map(row => [...row]);
+        // Validate puzzle is a proper 9x9 array
+        if (!puzzle || puzzle.length !== 9 || !puzzle[0] || puzzle[0].length !== 9) {
+            console.error('Invalid puzzle format:', puzzle);
+            return;
+        }
         
-        // Initialize board with locked cells filled in
-        board = puzzle.map(row => [...row]);
-        
-        // Initialize notes grid
-        notes = Array.from({ length: 9 }, () =>
-            Array.from({ length: 9 }, () => [])
+        // Initialize grid with cell objects
+        grid = Array.from({ length: 9 }, (_, row) =>
+            Array.from({ length: 9 }, (_, col) => {
+                const value = puzzle[row][col];
+                const isLocked = value !== 0;
+                return createCell(value, isLocked);
+            })
         );
         
         // Clear history
         history = [];
-        notesHistory = [];
         isComplete = false;
         elapsedSeconds = 0;
         
@@ -91,17 +102,19 @@ const Game = (() => {
      * Place a number in a cell
      */
     function setCell(row, col, num) {
+        const cell = grid[row][col];
+        
         // Only allow changes to non-locked cells
-        if (original[row][col] !== 0) {
+        if (cell.isLocked) {
             return false;
         }
 
         // Save current state to history BEFORE making change
         saveToHistory();
 
-        board[row][col] = num;
+        cell.value = num;
         // Clear notes when a value is entered
-        notes[row][col] = [];
+        cell.notes = [false, false, false, false, false, false, false, false, false];
         return true;
     }
 
@@ -109,16 +122,17 @@ const Game = (() => {
      * Add a note to a cell
      */
     function addNote(row, col, num) {
-        if (original[row][col] !== 0 || board[row][col] !== 0) {
-            return false; // Can't add notes to locked or filled cells
+        const cell = grid[row][col];
+        
+        // Can't add notes if locked or if cell has a value
+        if (cell.isLocked || cell.value !== 0) {
+            return false;
         }
 
         saveToHistory();
 
-        if (!notes[row][col].includes(num)) {
-            notes[row][col].push(num);
-            notes[row][col].sort((a, b) => a - b);
-        }
+        // Toggle the note (index is num-1 because array is 0-indexed for 1-9)
+        cell.notes[num - 1] = true;
         return true;
     }
 
@@ -126,13 +140,14 @@ const Game = (() => {
      * Remove a note from a cell
      */
     function removeNote(row, col, num) {
-        if (!notes[row][col].includes(num)) {
+        const cell = grid[row][col];
+        
+        if (!cell.notes[num - 1]) {
             return false;
         }
 
         saveToHistory();
-
-        notes[row][col] = notes[row][col].filter(n => n !== num);
+        cell.notes[num - 1] = false;
         return true;
     }
 
@@ -140,32 +155,43 @@ const Game = (() => {
      * Clear all notes from a cell
      */
     function clearNotes(row, col) {
-        if (notes[row][col].length === 0) {
+        const cell = grid[row][col];
+        
+        if (!cell.notes.some(note => note === true)) {
             return false;
         }
 
         saveToHistory();
-        notes[row][col] = [];
+        cell.notes = [false, false, false, false, false, false, false, false, false];
         return true;
     }
 
     /**
-     * Get notes for a cell
+     * Get notes for a cell as an array of note numbers
      */
     function getNotes(row, col) {
-        return [...notes[row][col]];
+        const cell = grid[row][col];
+        const noteArray = [];
+        for (let i = 0; i < 9; i++) {
+            if (cell.notes[i]) {
+                noteArray.push(i + 1);
+            }
+        }
+        return noteArray;
     }
 
     /**
-     * Clear a cell
+     * Clear a cell (remove the value but keep notes)
+     * Clears without affecting undo history
      */
     function clearCell(row, col) {
-        if (original[row][col] !== 0) {
+        const cell = grid[row][col];
+        
+        if (cell.isLocked) {
             return false;
         }
 
-        saveToHistory();
-        board[row][col] = 0;
+        cell.value = 0;
         return true;
     }
 
@@ -173,19 +199,18 @@ const Game = (() => {
      * Check if a cell has conflicts (duplicates in row/col/box)
      */
     function hasConflicts(row, col) {
-        const value = board[row][col];
+        const value = grid[row][col].value;
         if (value === 0) return false;
-
         // Check row
         for (let c = 0; c < BOARD_SIZE; c++) {
-            if (c !== col && board[row][c] === value) {
+            if (c !== col && grid[row][c].value === value) {
                 return true;
             }
         }
 
         // Check column
         for (let r = 0; r < BOARD_SIZE; r++) {
-            if (r !== row && board[r][col] === value) {
+            if (r !== row && grid[r][col].value === value) {
                 return true;
             }
         }
@@ -196,7 +221,7 @@ const Game = (() => {
 
         for (let r = boxRow; r < boxRow + BOX_SIZE; r++) {
             for (let c = boxCol; c < boxCol + BOX_SIZE; c++) {
-                if ((r !== row || c !== col) && board[r][c] === value) {
+                if ((r !== row || c !== col) && grid[r][c].value === value) {
                     return true;
                 }
             }
@@ -212,7 +237,10 @@ const Game = (() => {
     function isSolved() {
         // Check all rows have 1-9
         for (let r = 0; r < BOARD_SIZE; r++) {
-            const rowSet = new Set(board[r]);
+            const rowSet = new Set();
+            for (let c = 0; c < BOARD_SIZE; c++) {
+                rowSet.add(grid[r][c].value);
+            }
             if (rowSet.size !== BOARD_SIZE || rowSet.has(0)) {
                 return false;
             }
@@ -222,7 +250,7 @@ const Game = (() => {
         for (let c = 0; c < BOARD_SIZE; c++) {
             const colSet = new Set();
             for (let r = 0; r < BOARD_SIZE; r++) {
-                colSet.add(board[r][c]);
+                colSet.add(grid[r][c].value);
             }
             if (colSet.size !== BOARD_SIZE || colSet.has(0)) {
                 return false;
@@ -235,7 +263,7 @@ const Game = (() => {
                 const boxSet = new Set();
                 for (let r = boxRow; r < boxRow + BOX_SIZE; r++) {
                     for (let c = boxCol; c < boxCol + BOX_SIZE; c++) {
-                        boxSet.add(board[r][c]);
+                        boxSet.add(grid[r][c].value);
                     }
                 }
                 if (boxSet.size !== BOARD_SIZE || boxSet.has(0)) {
@@ -265,7 +293,14 @@ const Game = (() => {
         if (history.length === 0) return false;
 
         const previousState = history.pop();
-        board = previousState.map(row => [...row]);
+        // Deep copy the grid state back
+        grid = previousState.map(row =>
+            row.map(cell => ({
+                value: cell.value,
+                notes: [...cell.notes],
+                isLocked: cell.isLocked
+            }))
+        );
         return true;
     }
 
@@ -273,12 +308,15 @@ const Game = (() => {
      * Reset current game
      */
     function reset() {
-        board = original.map(row => [...row]);
-        notes = Array.from({ length: 9 }, () =>
-            Array.from({ length: 9 }, () => [])
+        // Reinitialize grid to original puzzle state
+        grid = grid.map(row =>
+            row.map(cell => ({
+                value: cell.isLocked ? cell.value : 0,
+                notes: [false, false, false, false, false, false, false, false, false],
+                isLocked: cell.isLocked
+            }))
         );
         history = [];
-        notesHistory = [];
         isComplete = false;
         elapsedSeconds = 0;
         if (timerInterval) clearInterval(timerInterval);
@@ -286,13 +324,20 @@ const Game = (() => {
     }
 
     /**
-     * Save current board state to history
+     * Save current grid state to history
      */
     function saveToHistory() {
         if (history.length >= MAX_HISTORY) {
             history.shift(); // Remove oldest entry
         }
-        history.push(board.map(row => [...row]));
+        // Deep copy the current grid state
+        history.push(grid.map(row =>
+            row.map(cell => ({
+                value: cell.value,
+                notes: [...cell.notes],
+                isLocked: cell.isLocked
+            }))
+        ));
     }
 
     /**
@@ -319,8 +364,6 @@ const Game = (() => {
      */
     function getState() {
         return {
-            board: board.map(row => [...row]),
-            original: original.map(row => [...row]),
             difficulty: difficulty,
             isComplete: isComplete,
             elapsedSeconds: elapsedSeconds,
@@ -332,9 +375,20 @@ const Game = (() => {
      * Get cell info
      */
     function getCell(row, col) {
+        if (!grid || !grid[row] || !grid[row][col]) {
+            console.error(`Grid not initialized or invalid cell ${row},${col}`, grid);
+            return {
+                value: 0,
+                isLocked: false,
+                hasConflict: false,
+                notes: []
+            };
+        }
+        
+        const cell = grid[row][col];
         return {
-            value: board[row][col],
-            isLocked: original[row][col] !== 0,
+            value: cell.value,
+            isLocked: cell.isLocked,
             hasConflict: hasConflicts(row, col),
             notes: getNotes(row, col)
         };
