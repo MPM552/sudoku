@@ -372,11 +372,11 @@ body {
 }
 
 .sudoku-cell.matching {
-    background-color: #ffffcc;
+    background-color: #e6ad34;
 }
 
 .sudoku-cell.matching.selected {
-    background-color: #ffff99;
+    background-color: #e6ad34;
     box-shadow: inset 0 0 0 2px #007bff;
 }
 
@@ -384,6 +384,7 @@ body {
 .cell-notes {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
     gap: 2px;
     width: 100%;
     height: 100%;
@@ -399,6 +400,8 @@ body {
     align-items: center;
     justify-content: center;
     color: #666;
+    width: 100%;
+    height: 100%;
 }
 
 /* 3x3 Box Borders */
@@ -415,12 +418,26 @@ body {
 }
 
 /* ===== Number Pad ===== */
+.number-pad-container {
+    display: flex;
+    gap: 15px;
+    width: 100%;
+    max-width: 500px;
+    align-items: center;
+}
+
+.note-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
 .number-pad {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    width: 100%;
-    max-width: 500px;
+    flex: 1;
 }
 
 .number-row {
@@ -459,6 +476,12 @@ body {
 
 .undo-btn-pad {
     font-size: 1.3rem;
+}
+
+.note-btn {
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 10px;
 }
 
 /* ===== Responsive Design ===== */

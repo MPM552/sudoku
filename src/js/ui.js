@@ -8,6 +8,7 @@ const UI = (() => {
         difficultyDisplay: null,
         timerDisplay: null,
         undoBtn: null,
+        backspaceBtn: null,
         newGameBtn: null,
         settingsBtn: null,
         numberPad: null,
@@ -16,8 +17,7 @@ const UI = (() => {
         bgColorPicker: null,
         closeSettingsBtn: null,
         resetSettingsBtn: null,
-        notesToggleBtn: null,
-        clearNotesBtn: null
+        notesToggleBtn: null
     };
 
     let selectedCell = null; // Track selected cell [row, col]
@@ -45,6 +45,7 @@ const UI = (() => {
             difficultyDisplay: document.getElementById('difficultyDisplay'),
             timerDisplay: document.getElementById('timerDisplay'),
             undoBtn: document.getElementById('undoBtn'),
+            backspaceBtn: document.getElementById('backspaceBtn'),
             newGameBtn: document.getElementById('newGameBtn'),
             settingsBtn: document.getElementById('settingsBtn'),
             numberPad: document.querySelector('.number-pad'),
@@ -56,8 +57,7 @@ const UI = (() => {
             bgColorPicker: document.getElementById('bgColorPicker'),
             closeSettingsBtn: document.getElementById('closeSettingsBtn'),
             resetSettingsBtn: document.getElementById('resetSettingsBtn'),
-            notesToggleBtn: document.getElementById('notesToggleBtn'),
-            clearNotesBtn: document.getElementById('clearNotesBtn')
+            notesToggleBtn: document.getElementById('notesToggleBtn')
         };
     }
 
@@ -77,8 +77,8 @@ const UI = (() => {
         document.querySelectorAll('.number-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const num = e.target.dataset.number;
-                if (num === 'undo') {
-                    handleUndo();
+                if (num === 'backspace') {
+                    handleBackspace();
                 } else {
                     handleNumberInput(parseInt(num));
                 }
@@ -87,10 +87,10 @@ const UI = (() => {
 
         // Control buttons
         elements.undoBtn.addEventListener('click', handleUndo);
+        elements.backspaceBtn.addEventListener('click', handleBackspace);
         elements.newGameBtn.addEventListener('click', showPuzzlePicker);
         elements.settingsBtn.addEventListener('click', showSettings);
         elements.notesToggleBtn.addEventListener('click', toggleNotesMode);
-        elements.clearNotesBtn.addEventListener('click', handleClearNotes);
 
         // Settings modal
         elements.closeSettingsBtn.addEventListener('click', hideSettings);
@@ -127,6 +127,25 @@ const UI = (() => {
     }
 
     /**
+     * Handle backspace/clear action
+     */
+    function handleBackspace() {
+        if (!selectedCell || Game.getState().isComplete) return;
+
+        if (notesMode) {
+            Game.clearNotes(selectedCell[0], selectedCell[1]);
+        } else {
+            Game.clearCell(selectedCell[0], selectedCell[1]);
+        }
+        updateBoard();
+        updateUI(); // Update button state after clear
+        
+        // Refresh highlights after clearing
+        clearNumberHighlights();
+        highlightMatchingNumbers(selectedCell[0], selectedCell[1]);
+    }
+
+    /**
      * Handle keyboard input (1-9 for numbers, Backspace for delete)
      */
     function handleKeyboardInput(e) {
@@ -144,17 +163,7 @@ const UI = (() => {
         // Backspace or Delete to clear
         if (e.key === 'Backspace' || e.key === 'Delete') {
             e.preventDefault();
-            if (notesMode) {
-                Game.clearNotes(selectedCell[0], selectedCell[1]);
-            } else {
-                Game.clearCell(selectedCell[0], selectedCell[1]);
-            }
-            updateBoard();
-            updateUI(); // Update button state after clear
-            
-            // Refresh highlights after clearing
-            clearNumberHighlights();
-            highlightMatchingNumbers(selectedCell[0], selectedCell[1]);
+            handleBackspace();
             return;
         }
     }
@@ -169,23 +178,7 @@ const UI = (() => {
     }
 
     /**
-     * Clear all notes from the selected cell
-     */
-    function handleClearNotes() {
-        if (!selectedCell) return;
-        
-        const [row, col] = selectedCell;
-        const cell = Game.getCell(row, col);
-        
-        // Don't allow on locked or filled cells
-        if (cell.isLocked || cell.value !== 0) return;
-        
-        Game.clearNotes(row, col);
-        updateBoard();
-        updateUI();
-    }
 
-    /**
      * Handle number pad or keyboard number input
      */
     function handleNumberInput(num) {
@@ -417,14 +410,14 @@ const UI = (() => {
             const col = parseInt(cellEl.dataset.col);
             const gameCell = Game.getCell(row, col);
 
-            // Clear cell content
-            cellEl.textContent = '';
+            // Clear cell content completely
             cellEl.innerHTML = '';
 
             // Update value or notes
             if (gameCell.value !== 0) {
                 cellEl.textContent = gameCell.value;
             } else if (gameCell.notes.length > 0) {
+                // Display notes only when cell has no value
                 const notesContainer = document.createElement('div');
                 notesContainer.className = 'cell-notes';
                 gameCell.notes.forEach(note => {
@@ -435,6 +428,7 @@ const UI = (() => {
                 });
                 cellEl.appendChild(notesContainer);
             }
+            // If no value and no notes, cell remains empty
 
             // Update conflict highlighting
             if (gameCell.value !== 0 && gameCell.hasConflict) {
@@ -452,14 +446,6 @@ const UI = (() => {
         const state = Game.getState();
         elements.difficultyDisplay.textContent = state.difficulty.charAt(0).toUpperCase() + state.difficulty.slice(1);
         elements.undoBtn.disabled = !state.canUndo || state.isComplete;
-
-        // Grey out clear notes button if no cell selected or locked/filled cell selected
-        if (!selectedCell) {
-            elements.clearNotesBtn.disabled = true;
-        } else {
-            const cell = Game.getCell(selectedCell[0], selectedCell[1]);
-            elements.clearNotesBtn.disabled = cell.isLocked || cell.value !== 0 || cell.notes.length === 0;
-        }
 
         // Update timer
         updateTimerDisplay();
